@@ -1,5 +1,5 @@
 import LaunchDashboard from "layouts/launchDashboard";
-import CreatePresale from "layouts/createPresale";
+import CreatePrivateSale from "layouts/createPrivateSale";
 import InvestDashboard from "layouts/investDashboard";
 
 // @mui icons
@@ -11,25 +11,25 @@ const routes = [
   {
     type: "collapse",
     name: "Launch Dashboard",
-    key: "LaunchDashboard",
+    key: "launchDashboard",
     icon: <RequestPageIcon />,
-    route: "/LaunchDashboard",
+    route: "/launchDashboard",
     component: <LaunchDashboard />,
   },
   {
     type: "collapse",
-    name: "Create Presale",
-    key: "CreatePresale",
+    name: "Create PrivateSale",
+    key: "createPrivateSale",
     icon: <LoyaltyIcon />,
-    route: "/CreatePresale",
-    component: <CreatePresale />,
+    route: "/createPrivateSale",
+    component: <CreatePrivateSale />,
   },
   {
     type: "collapse",
     name: "Invest Dashboard",
-    key: "InvestDashboard",
+    key: "investDashboard",
     icon: <LoyaltyIcon />,
-    route: "/InvestDashboard",
+    route: "/investDashboard",
     component: <InvestDashboard />,
   },
 ];

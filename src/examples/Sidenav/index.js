@@ -37,14 +37,6 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
   const location = useLocation();
   const collapseName = location.pathname.replace("/", "");
 
-  let textColor = "white";
-
-  if (transparentSidenav || (whiteSidenav && !darkMode)) {
-    textColor = "dark";
-  } else if (whiteSidenav && darkMode) {
-    textColor = "inherit";
-  }
-
   const closeSidenav = () => setMiniSidenav(dispatch, true);
 
   useEffect(() => {
@@ -96,7 +88,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
       returnValue = (
         <MDTypography
           key={key}
-          color={textColor}
+          color="dark"
           display="block"
           variant="caption"
           fontWeight="bold"
@@ -137,7 +129,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           top={0}
           right={0}
           p={1.625}
-          style={{ zIndex: "10", background: "red" }}
+          style={{ zIndex: "10", background: "linear-gradient(195deg, #42424a, #191919)" }}
           onClick={closeSidenav}
           sx={{ cursor: "pointer" }}
         >
@@ -151,25 +143,15 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
             width={!brandName && "100%"}
             sx={(theme) => sidenavLogoLabel(theme, { miniSidenav })}
           >
-            <MDTypography component="h5" variant="button" fontWeight="medium" color={textColor}>
+            <MDTypography component="h5" variant="button" fontWeight="medium" color="dark">
               Welcome to OUR
             </MDTypography>
           </MDBox>
         </MDBox>
       </MDBox>
-      <Divider
-        light={
-          (!darkMode && !whiteSidenav && !transparentSidenav) ||
-          (darkMode && !transparentSidenav && whiteSidenav)
-        }
-      />
+      <Divider />
       <List>{renderRoutes}</List>
-      <Divider
-        light={
-          (!darkMode && !whiteSidenav && !transparentSidenav) ||
-          (darkMode && !transparentSidenav && whiteSidenav)
-        }
-      />
+      <Divider />
       <MDBox p={2} mt="auto" />
     </SidenavRoot>
   );

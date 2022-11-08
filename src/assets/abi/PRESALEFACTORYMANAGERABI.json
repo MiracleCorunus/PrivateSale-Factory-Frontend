@@ -48,18 +48,123 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "owner",
+				"name": "owner_",
 				"type": "address"
 			},
 			{
 				"internalType": "address",
-				"name": "presale",
+				"name": "presale_",
 				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "title_",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "tokenPrice_",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalMaxAmount_",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "minInvestAmount_",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "maxInvestAmount_",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime_",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "period_",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "isNative_",
+				"type": "bool"
 			}
 		],
 		"name": "assignPresaleToOwner",
 		"outputs": [],
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllPresales",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "presaleOwner",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "presaleAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "title",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalMaxAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "minInvestAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxInvestAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "period",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "isNative",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct PresaleFactoryManager.Presale[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -70,12 +175,64 @@
 				"type": "address"
 			}
 		],
-		"name": "getAllPresales",
+		"name": "getAllPresalesPerUser",
 		"outputs": [
 			{
-				"internalType": "address[]",
+				"components": [
+					{
+						"internalType": "address",
+						"name": "presaleOwner",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "presaleAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "title",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalMaxAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "minInvestAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxInvestAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "period",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "isNative",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct PresaleFactoryManager.Presale[]",
 				"name": "",
-				"type": "address[]"
+				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",

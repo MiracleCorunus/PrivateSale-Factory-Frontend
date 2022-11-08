@@ -1,5 +1,6 @@
 module.exports = {
-  PresaleFactoryManager: "0x85b4a84404E9402E811571B162d95CA6423431be",
-  StandardPresale: "0x8BDe306edACCc2d651496bAc0f2aFB66E74D0162",
-  StandardPresaleFactory: "0x6133384014dEFCa6A091537Aa43F23b523706306",
+  PresaleFactoryManager: "0x926813203e4F2401914Eb0447ef095F5b719aa62",
+  StandardPresale: "0xb4518a0b57CED58Be88E53dF9985823c7Ce290ae",
+  StandardPresaleFactory: "0x9C6831034eCeA371078D0fE2B96aA0AbAdF42EBe",
+  BusdAddress: "0x77aBF6126495dbBFE53a732c4a4DB663a1cA1000",
 };

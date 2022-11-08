@@ -7,22 +7,17 @@ import { useState, useEffect } from "react";
 import { useWeb3React } from "@web3-react/core";
 import { Link } from "react-router-dom";
 
-// eslint-disable-next-line no-unused-vars
-import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
-
 import MDBox from "components/MDBox";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
-// Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 
-import Card from "@mui/material/Card";
+import Cards from "@mui/material/Card";
 import MDTypography from "components/MDTypography";
-//  Customize the DoodNftStaking CSS
 import MDButton from "components/MDButton";
 
-import { Modal, Input, Switch, Spin } from "antd";
+import { Modal, Input, Spin, Card, message } from "antd";
 
 import config from "config/config";
 import STANDARDPRESALEABI from "../../assets/abi/STANDARDPRESALEABI.json";
@@ -32,17 +27,16 @@ const ethers = require("ethers");
 
 const { TextArea } = Input;
 function LaunchDashboard() {
-  const Provider = new ethers.providers.Web3Provider(window.ethereum);
-  const Signer = Provider.getSigner();
-  const { account } = useWeb3React();
+  const { account, chainId } = useWeb3React();
 
   const [presaleArray, setPresaleArray] = useState([]);
   const [modalpresaleArray, setModalPresaleArray] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dataState, setDataState] = useState(false);
   const [publishLoading, setPublishLoading] = useState(false);
-  const [linkCreateState, setLinkCreateState] = useState(false);
-  // const [liveState, getLiveState] = useState();
 
+  const Provider = new ethers.providers.Web3Provider(window.ethereum);
+  const Signer = Provider.getSigner();
   const presaleFactoryContract = new ethers.Contract(
     config.PresaleFactoryManager,
     PRESALEFACTORYMANAGERABI,
@@ -51,40 +45,36 @@ function LaunchDashboard() {
 
   const getPresaleData = async () => {
     setLoading(true);
-    const array = [];
-    await presaleFactoryContract.getAllPresales(account).then(async (data) => {
-      // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < data.length; i++) {
-        const standardFactoryContract = new ethers.Contract(data[i], STANDARDPRESALEABI, Signer);
-        // eslint-disable-next-line no-await-in-loop, camelcase
-        const live_state = await standardFactoryContract.getIsLive();
-        // eslint-disable-next-line no-await-in-loop, camelcase, no-underscore-dangle
-        const start_Time = await standardFactoryContract._startTime();
-        // eslint-disable-next-line no-underscore-dangle
-        const period = await standardFactoryContract._period();
-        // eslint-disable-next-line no-underscore-dangle, camelcase
-        const token_price = await standardFactoryContract._tokenPrice();
-        // eslint-disable-next-line no-underscore-dangle, camelcase
-        const total_amount = await standardFactoryContract._totalMaxAmount();
-        // eslint-disable-next-line no-underscore-dangle, camelcase
-        const min_contribute_Amount = await standardFactoryContract._minInvestAmount();
-        // eslint-disable-next-line no-underscore-dangle, camelcase
-        const max_contribute_Amount = await standardFactoryContract._maxInvestAmount();
-        array.push({
-          contractAddress: data[i],
-          liveState: live_state,
-          // eslint-disable-next-line camelcase
-          startTime: Date(start_Time * 1000).toString(),
-          // eslint-disable-next-line camelcase
-          endTime: Date((start_Time + period) * 1000).toString(),
-          tokenPrice: Number(token_price),
-          totalAmount: Number(total_amount),
-          minContriAmount: Number(min_contribute_Amount),
-          maxContriAmount: Number(max_contribute_Amount),
-        });
+    // eslint-disable-next-line camelcase
+    const presale_Array = [];
+    await presaleFactoryContract.getAllPresalesPerUser(account).then(async (data) => {
+      if (data.length === 0) {
+        setDataState(false);
+        setLoading(false);
+      } else {
+        setDataState(true);
+        // eslint-disable-next-line no-plusplus
+        for (let i = 0; i < data.length; i++) {
+          const startDateEvent = new Date(Number(data[i].startTime) * 1000).toString();
+          const endDateEvent = new Date(
+            (Number(data[i].startTime) + Number(data[i].period)) * 1000
+          ).toString();
+          presale_Array.push({
+            contractAddress: data[i].presaleAddress.toString(),
+            // eslint-disable-next-line camelcase
+            startTime: startDateEvent,
+            // eslint-disable-next-line camelcase
+            endTime: endDateEvent,
+            tokenPrice: Number(data[i].tokenPrice) / 1000000,
+            totalAmount: Number(data[i].totalMaxAmount) / 1000000,
+            minContriAmount: Number(ethers.utils.formatEther(data[i].minInvestAmount)),
+            maxContriAmount: Number(ethers.utils.formatEther(data[i].maxInvestAmount)),
+          });
+        }
       }
+      // eslint-disable-next-line no-plusplus
     });
-    setPresaleArray(array);
+    setPresaleArray(presale_Array);
     setLoading(false);
   };
 
@@ -103,7 +93,7 @@ function LaunchDashboard() {
       Signer
     );
 
-    await presaleContract
+    presaleContract
       .setInformation(
         logoLink,
         websiteLink,
@@ -113,11 +103,19 @@ function LaunchDashboard() {
         otherLink,
         description
       )
-      .then(() => {
-        setPublishLoading(false);
+      .then((tx) => {
+        tx.wait().then(() => {
+          setPublishLoading(false);
+          message.success("Published Successful");
+          // eslint-disable-next-line no-use-before-define
+          setIsModalOpen(false);
+        });
+      })
+      .catch(() => {
         // eslint-disable-next-line no-use-before-define
-        setIsSuccessModalOpen(true);
-        setLinkCreateState(true);
+        setIsModalOpen(false);
+        message.info("Publish Canceled");
+        setPublishLoading(false);
       });
   };
 
@@ -126,14 +124,9 @@ function LaunchDashboard() {
   }, [account]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const handleCancel = () => {
     setIsModalOpen(false);
-  };
-
-  const handleSuccessCancel = () => {
-    setIsSuccessModalOpen(false);
   };
 
   const showModal = (index) => {
@@ -145,7 +138,7 @@ function LaunchDashboard() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox style={{ minHeight: "500px" }} pt={7}>
-        <Card>
+        <Cards>
           <MDBox
             mx={2}
             mt={-3}
@@ -165,60 +158,78 @@ function LaunchDashboard() {
               {loading ? (
                 <Spin style={{ margin: "4%" }} />
               ) : (
-                <Grid container spacing={1} py={1} px={1}>
-                  {presaleArray.map((presale, index) => (
-                    <Grid
-                      item
-                      xs={12}
-                      xl={6}
-                      md={6}
-                      mt={3}
-                      style={{ display: "flex", justifyContent: "center" }}
-                    >
-                      <MDBox coloredShadow="light" borderRadius="8px">
-                        <MDButton
-                          mx={2}
-                          px={2}
-                          color="white"
-                          onClick={() => showModal(index)}
-                          style={{ display: "flex", width: "100%", justifyContent: "start" }}
+                <>
+                  {dataState ? (
+                    <Grid container spacing={3} py={1} px={2}>
+                      {presaleArray.map((presale, index) => (
+                        <Grid
+                          item
+                          xs={12}
+                          xl={6}
+                          md={6}
+                          mt={3}
+                          key={index}
+                          style={{ display: "flex", justifyContent: "center" }}
                         >
-                          <MDTypography
-                            variant="h6"
-                            color="dark"
-                            textAlign="center"
-                            style={{ width: "100%" }}
+                          <Card
+                            style={{ borderRadius: "8px" }}
+                            hoverable
+                            onClick={() => showModal(index)}
                           >
-                            <Switch
-                              checkedChildren="Live"
-                              unCheckedChildren="End"
-                              defaultChecked={!presale.liveState}
-                            />{" "}
-                            {presale.contractAddress}
-                          </MDTypography>
-                          <MDTypography
-                            variant="h6"
-                            color="dark"
-                            textAlign="center"
-                            style={{ width: "100%" }}
-                          >
-                            {presale.startTime}
-                            <br />
-                          </MDTypography>
-                        </MDButton>
-                      </MDBox>
+                            <MDTypography
+                              variant="h6"
+                              color="dark"
+                              textAlign="center"
+                              style={{ width: "100%" }}
+                            >
+                              PrivateSale Address :{" "}
+                              {presale && presale.contractAddress.slice(0, 10)}...{" "}
+                              {presale && presale.contractAddress.slice(-5)}
+                            </MDTypography>
+                            <MDTypography
+                              variant="h6"
+                              color="dark"
+                              textAlign="center"
+                              style={{ width: "100%" }}
+                            >
+                              Start Date : {presale.startTime}
+                              <br />
+                            </MDTypography>
+                          </Card>
+                        </Grid>
+                      ))}
                     </Grid>
-                  ))}
-                </Grid>
+                  ) : (
+                    <>
+                      {" "}
+                      <MDTypography
+                        variant="h6"
+                        color="dark"
+                        textAlign="center"
+                        p={3}
+                        style={{ width: "100%" }}
+                      >
+                        No Data
+                        <br />
+                      </MDTypography>
+                    </>
+                  )}
+                </>
               )}
             </>
           ) : (
-            <MDTypography variant="h6" color="dark" textAlign="center" style={{ width: "100%" }}>
+            <MDTypography
+              variant="h6"
+              color="dark"
+              textAlign="center"
+              style={{ width: "100%" }}
+              p={3}
+            >
               Please Connect Wallet
               <br />
             </MDTypography>
           )}
-        </Card>
+        </Cards>
       </MDBox>
       <Modal
         closable={false}
@@ -228,7 +239,7 @@ function LaunchDashboard() {
         className="launchdasboardModal"
       >
         <MDTypography variant="h4" color="dark" textAlign="left" style={{ width: "80%" }} pb={1}>
-          Presale
+          PrivateSale
         </MDTypography>
         <MDTypography
           variant="h7"
@@ -237,37 +248,15 @@ function LaunchDashboard() {
           textAlign="left"
           style={{ width: "100%", display: "flex" }}
         >
-          Presale Address :
-          <MDTypography variant="h7" color="dark" textAlign="left" px={1} fontWeight="regular">
-            {modalpresaleArray.contractAddress}...
-          </MDTypography>
+          PrivateSale Address :
         </MDTypography>
-
+        <MDTypography variant="h7" color="dark" textAlign="left" fontWeight="regular">
+          {modalpresaleArray && modalpresaleArray.contractAddress}
+        </MDTypography>
         <Grid container spacing={1} mt={3}>
           <Grid item xs={12} xl={6} md={6} mt={1} style={{ justifyContent: "center" }}>
-            <MDTypography
-              variant="h5"
-              color="dark"
-              textAlign="left"
-              style={{ width: "100%" }}
-              pb={1}
-            >
-              Presale Status
-            </MDTypography>
-            <MDTypography
-              variant="h7"
-              fontWeight="bold"
-              color="info"
-              textAlign="left"
-              style={{ width: "100%", display: "flex" }}
-            >
-              Status :
-              <MDTypography variant="h7" color="dark" textAlign="left" px={3} fontWeight="regular">
-                {modalpresaleArray.liveState ? "Live" : "End"}
-              </MDTypography>
-            </MDTypography>
-            <MDTypography variant="h5" color="dark" textAlign="left" fontWeight="bold" py={3}>
-              PreSale Parameters
+            <MDTypography variant="h4" color="dark" textAlign="left" fontWeight="bold">
+              PrivateSale Parameters
             </MDTypography>
             <MDTypography
               variant="h7"
@@ -304,7 +293,7 @@ function LaunchDashboard() {
             >
               Min. / Max.Contribution :
               <MDTypography variant="h7" color="dark" textAlign="left" px={3} fontWeight="regular">
-                {modalpresaleArray.minContriAmount} / {modalpresaleArray.maxContriAmount} BNB
+                {modalpresaleArray.minContriAmount} / {modalpresaleArray.maxContriAmount}
               </MDTypography>
             </MDTypography>
 
@@ -335,13 +324,12 @@ function LaunchDashboard() {
               </MDTypography>
             </MDTypography>
 
-            {linkCreateState && (
-              <MDTypography variant="h7" color="white" textAlign="center" style={{ width: "100%" }}>
-                <Link to={`${modalpresaleArray.contractAddress}`}>
-                  https://localhost:3000/ {modalpresaleArray.contractAddress}
-                </Link>
-              </MDTypography>
-            )}
+            <MDTypography variant="h7" color="white" textAlign="center" style={{ width: "100%" }}>
+              <Link to={`/privatesale/${modalpresaleArray.contractAddress}/${chainId}`}>
+                https://privatesale-work.web.app/privatesale/{chainId}
+                {modalpresaleArray.contractAddress}
+              </Link>
+            </MDTypography>
           </Grid>
           <Grid item xs={12} xl={6} md={6} mt={1} style={{ justifyContent: "center" }}>
             <MDTypography
@@ -430,36 +418,19 @@ function LaunchDashboard() {
                 </MDTypography>
               </MDButton>
             ) : (
-              <MDButton color="info" disabled="true">
+              <MDButton color="info">
                 <MDTypography
                   variant="h7"
                   color="white"
                   textAlign="center"
-                  style={{ width: "100%" }}
+                  style={{ width: "50px" }}
                 >
-                  <Spin />
+                  <Spin size="small" />
                 </MDTypography>
               </MDButton>
             )}
           </Grid>
         </Grid>
-      </Modal>
-      <Modal
-        style={{ zIndex: "999999" }}
-        closable={false}
-        open={isSuccessModalOpen}
-        width={500}
-        footer={[<MDButton onClick={handleSuccessCancel}>Ok</MDButton>]}
-      >
-        <MDTypography
-          variant="h3"
-          color="success"
-          textAlign="center"
-          style={{ width: "100%" }}
-          pb={2}
-        >
-          Created Successful !
-        </MDTypography>
       </Modal>
     </DashboardLayout>
   );

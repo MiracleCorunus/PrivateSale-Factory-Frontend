@@ -1,3 +1,4 @@
+/* eslint-disable radix */
 /* eslint-disable no-loss-of-precision */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable camelcase */
@@ -17,29 +18,33 @@ import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 //  Customize the DoodNftStaking CSS
 import TextField from "@mui/material/TextField";
-import { DatePicker, Checkbox, Modal, Spin } from "antd";
+import { DatePicker, Checkbox, Modal, Spin, message, Radio } from "antd";
 
 import config from "config/config";
 import STANDARDPRESALEFACTORYABI from "../../assets/abi/STANDARDPRESALEFACTORYABI.json";
 
 const ethers = require("ethers");
 
-function CreatePresale() {
+function CreatePrivateSale() {
   const Provider = new ethers.providers.Web3Provider(window.ethereum);
   const Signer = Provider.getSigner();
 
   const StandardPresaleFactoryContract = new ethers.Contract(
     config.StandardPresaleFactory,
-    STANDARDPRESALEFACTORYABI.abi,
+    STANDARDPRESALEFACTORYABI,
     Signer
   );
 
   const [loading, setLoading] = useState(false);
+  const [tokenType, setTokenType] = useState("BNB");
   const [contributionState, setContributionState] = useState(true);
   const [dateState, setDateState] = useState(true);
   const [createState, setCreateState] = useState(true);
-  const [dateValidation, setDateValidation] = useState(true);
-  const [contributionValidation, setContributionValidation] = useState(true);
+  const [dateValidation, setDateValidation] = useState(false);
+  const [startDateValidation, setStartDateValidation] = useState(false);
+  const [contributionValidation, setContributionValidation] = useState(false);
+
+  const [privateTitle, setPrivateTitle] = useState("");
 
   const [tokenPrice, setTokenPrice] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -49,75 +54,114 @@ function CreatePresale() {
   const [startDate, setStartDate] = useState(0);
   const [endDateStamp, setEndDateStamp] = useState("");
   const [endDate, setEndDate] = useState(0);
-
+  const [isNative, setIsNative] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
+  const onChange = (e) => {
+    if (e.target.value) {
+      setIsNative(true);
+      setTokenType("BNB");
+    } else {
+      setTokenType("BUSD");
+      setIsNative(false);
+    }
+  };
 
   const showModal = () => {
+    const token_Title = document.getElementById("tokenTitle").value;
+    const token_price = document.getElementById("tokenPrice").value;
+    const total_Amount = document.getElementById("totalAmount").value;
+    const min_Contribution = document.getElementById("minContribution").value;
+    const max_Contribution = document.getElementById("maxContribution").value;
+    const contributionCheckBox = document.getElementById("contributioncheckbox");
+    const endTimeCheckBox = document.getElementById("endtimecheckbox");
+
+    if (contributionCheckBox.checked && endTimeCheckBox.checked) {
+      if (startDate < endDate && min_Contribution < max_Contribution) {
+        setPrivateTitle(token_Title);
+        setDateValidation(false);
+        setContributionValidation(false);
+        setTokenPrice(token_price);
+        setTotalAmount(total_Amount);
+        setMinContributionAmount(min_Contribution);
+        setMaxContributionAmount(max_Contribution);
+        setIsModalOpen(true);
+      } else if (startDate > endDate) {
+        setDateValidation(true);
+      } else if (min_Contribution > max_Contribution) {
+        setContributionValidation(true);
+      }
+    } else if (contributionCheckBox.checked && !endTimeCheckBox.checked) {
+      if (min_Contribution < max_Contribution) {
+        setPrivateTitle(token_Title);
+        setDateValidation(false);
+        setContributionValidation(false);
+        setTokenPrice(token_price);
+        setTotalAmount(total_Amount);
+        setMinContributionAmount(min_Contribution);
+        setMaxContributionAmount(max_Contribution);
+        setEndDate(0);
+        setEndDateStamp("No Limit");
+        setIsModalOpen(true);
+      } else {
+        setContributionValidation(true);
+      }
+    } else if (!contributionCheckBox.checked && endTimeCheckBox.checked) {
+      if (startDate < endDate) {
+        setPrivateTitle(token_Title);
+        setDateValidation(false);
+        setContributionValidation(false);
+        setTokenPrice(token_price);
+        setTotalAmount(total_Amount);
+        setMinContributionAmount(0);
+        setMaxContributionAmount(0);
+        setIsModalOpen(true);
+      } else {
+        setDateValidation(true);
+      }
+    } else if (!contributionCheckBox.checked && !endTimeCheckBox.checked) {
+      setPrivateTitle(token_Title);
+      setDateValidation(false);
+      setContributionValidation(false);
+      setTokenPrice(token_price);
+      setTotalAmount(total_Amount);
+      setMinContributionAmount(0);
+      setMaxContributionAmount(0);
+      setIsModalOpen(true);
+      setEndDate(0);
+      setEndDateStamp("No Limit");
+    }
+  };
+
+  const onChangeStartDate = (dateString) => {
     const token_Price = document.getElementById("tokenPrice").value;
     const total_Amount = document.getElementById("totalAmount").value;
-    const min_contribute_Amount = document.getElementById("minContribution").value;
-    const max_contribute_Amount = document.getElementById("maxContribution").value;
-    const checkbox_contribute = document.getElementById("contrubutioncheckbox");
-
-    if (checkbox_contribute.checked) {
-      if (min_contribute_Amount === null) {
-        setMinContributionAmount(0);
-      } else if (max_contribute_Amount === null) {
-        setMaxContributionAmount(
-          115792089237316195423570985008687907853269984665640564039457584007913129639935
-        );
-      } else {
-        setMinContributionAmount(min_contribute_Amount);
-        setMaxContributionAmount(max_contribute_Amount);
-      }
+    const currentTime = new Date();
+    const currentTimeStamp = parseInt((new Date(currentTime).getTime() / 1000).toFixed(0));
+    const datum = parseInt((new Date(dateString).getTime() / 1000).toFixed(0));
+    const event = new Date(datum * 1000);
+    if (datum > currentTimeStamp) {
+      setStartDate(datum);
+      setStartDateStamp(event.toString());
+      setStartDateValidation(false);
     } else {
-      setMaxContributionAmount(
-        115792089237316195423570985008687907853269984665640564039457584007913129639935
-      );
-      setMinContributionAmount(0);
+      setStartDateValidation(true);
     }
-
-    setTokenPrice(token_Price);
-    setTotalAmount(total_Amount);
-
-    startDate > endDate && endDateStamp !== ""
-      ? setDateValidation(false)
-      : min_contribute_Amount > max_contribute_Amount
-      ? setContributionValidation(false)
-      : setIsModalOpen(true);
-    startDate < endDate && endDate !== ""
-      ? setDateValidation(true)
-      : min_contribute_Amount < max_contribute_Amount
-      ? setContributionValidation(true)
-      : "";
+    token_Price > 0 && total_Amount > 0 && datum > currentTimeStamp
+      ? setCreateState(false)
+      : setCreateState(true);
   };
 
-  // eslint-disable-next-line no-unused-vars
-  const onChangeStartDate = (value, dateString) => {
-    // eslint-disable-next-line radix
+  const onChangeEndDate = (dateString) => {
     const datum = parseInt((new Date(dateString).getTime() / 1000).toFixed(0));
-    // eslint-disable-next-line no-const-assign
-    const event = new Date(datum * 1000).toString();
-    setStartDate(datum);
-    setStartDateStamp(event);
-  };
-
-  const onChangeEndDate = (value, dateString) => {
-    // eslint-disable-next-line radix
-    const datum = parseInt((new Date(dateString).getTime() / 1000).toFixed(0));
-    const event = new Date(datum * 1000).toString();
+    const event = new Date(datum * 1000);
 
     setEndDate(datum);
-    setEndDateStamp(event);
+    setEndDateStamp(event.toString());
   };
 
-  const onOk = (value) => {
-    console.log("onOk: ", value);
-  };
   const handleCancel = () => {
     setIsModalOpen(false);
-    setIsSuccessModalOpen(false);
   };
 
   const settingContribution = (e) => {
@@ -134,48 +178,36 @@ function CreatePresale() {
 
   const createSaleState = () => {
     const token_Price = document.getElementById("tokenPrice").value;
+    const token_Title = document.getElementById("tokenTitle").value;
     const total_Amount = document.getElementById("totalAmount").value;
 
-    token_Price !== "" && total_Amount !== "" && token_Price > 0 && total_Amount > 0
+    token_Price > 0 && total_Amount > 0 && startDate > 0 && token_Title !== ""
       ? setCreateState(false)
       : setCreateState(true);
   };
 
   const confirmFunc = async () => {
     setLoading(true);
-    if (minContributionAmount === "" && maxContributionAmount) {
-      // eslint-disable-next-line no-const-assign
-      minContributionAmount = 0;
-      // eslint-disable-next-line no-const-assign
-      maxContributionAmount = 0;
-    }
-    const isNative = true;
-    // eslint-disable-next-line
-    console.log(
-      tokenPrice,
-      totalAmount,
-      minContributionAmount,
-      maxContributionAmount,
-      startDate,
-      endDate,
-      isNative
-    );
-    await StandardPresaleFactoryContract.create(
+    StandardPresaleFactoryContract.create(
+      privateTitle,
       ethers.BigNumber.from(tokenPrice * 1000000),
       ethers.BigNumber.from(totalAmount * 1000000),
       ethers.BigNumber.from(startDate),
-      ethers.BigNumber.from(endDate - startDate),
-      ethers.BigNumber.from(minContributionAmount),
-      ethers.BigNumber.from(maxContributionAmount),
+      endDate === 0 ? ethers.BigNumber.from(0) : ethers.BigNumber.from(endDate - startDate),
+      ethers.utils.parseEther(minContributionAmount.toString()),
+      maxContributionAmount === 0
+        ? "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        : ethers.utils.parseEther(maxContributionAmount.toString()),
       isNative,
       {
-        gasLimit: 3000000,
         value: ethers.utils.parseEther("0.01"),
       }
-    ).then(() => {
-      setLoading(false);
-      setIsModalOpen(false);
-      setIsSuccessModalOpen(true);
+    ).then((tx) => {
+      tx.wait().then(() => {
+        setLoading(false);
+        setIsModalOpen(false);
+        message.success("Created Successful");
+      });
     });
   };
 
@@ -198,10 +230,36 @@ function CreatePresale() {
               Create LaunchPad
             </MDTypography>
           </MDBox>
-          <Grid container spacing={1} py={5}>
-            <Grid item xs={12} xl={8} md={8} mt={3} m={3} style={{ justifyContent: "center" }}>
+          <Grid container spacing={1} py={2}>
+            <Grid item xs={12} xl={8} md={8} m={3} style={{ justifyContent: "center" }}>
+              <MDTypography variant="h6" textAlign="left" style={{ width: "100%" }}>
+                Currency{" "}
+              </MDTypography>
+              <Radio.Group
+                onChange={onChange}
+                value={isNative}
+                style={{ paddingBottom: "3%", width: "100%" }}
+                id="tokenType_radio"
+              >
+                <Radio value>BNB</Radio>
+                <Radio value={false}>BUSD</Radio>
+              </Radio.Group>
+
               <TextField
-                style={{ width: "100%", marginTop: "5%" }}
+                style={{ width: "100%", marginBottom: "3%" }}
+                id="tokenTitle"
+                label="PrivateSale Title"
+                type="text"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                onChange={createSaleState}
+              />
+              <MDTypography variant="h6" textAlign="left" style={{ width: "100%" }}>
+                Tokens for 1{tokenType}
+              </MDTypography>
+              <TextField
+                style={{ width: "100%", marginTop: "1%" }}
                 id="tokenPrice"
                 label="Token Price"
                 type="number"
@@ -210,8 +268,15 @@ function CreatePresale() {
                 }}
                 onChange={createSaleState}
               />
+              <MDTypography
+                variant="h6"
+                textAlign="left"
+                style={{ width: "100%", marginTop: "4%" }}
+              >
+                Total Token Amount
+              </MDTypography>
               <TextField
-                style={{ width: "100%", marginTop: "5%" }}
+                style={{ width: "100%", marginTop: "1%" }}
                 id="totalAmount"
                 label="Total Amount"
                 type="number"
@@ -221,7 +286,7 @@ function CreatePresale() {
                 onChange={createSaleState}
               />
               <Checkbox
-                id="contrubutioncheckbox"
+                id="contributioncheckbox"
                 style={{ marginTop: "3%" }}
                 onChange={settingContribution}
               >
@@ -234,7 +299,7 @@ function CreatePresale() {
                   <TextField
                     style={{ width: "100%", marginTop: "5%" }}
                     id="minContribution"
-                    label="Min.Contribution (BNB)"
+                    label="Min.Contribution"
                     type="number"
                     InputLabelProps={{
                       shrink: true,
@@ -246,7 +311,7 @@ function CreatePresale() {
                   <TextField
                     style={{ width: "100%", marginTop: "5%" }}
                     id="maxContribution"
-                    label="Max.Contribution (BNB)"
+                    label="Max.Contribution"
                     type="number"
                     InputLabelProps={{
                       shrink: true,
@@ -254,9 +319,9 @@ function CreatePresale() {
                     disabled={contributionState}
                   />
                 </Grid>
-                {!contributionValidation && (
+                {contributionValidation && (
                   <MDTypography variant="h6" textAlign="left" color="error">
-                    Please enter the correct date (Startdate, EndDate)
+                    Max Contribution must be greater than Min Contribution!
                   </MDTypography>
                 )}
               </Grid>
@@ -266,29 +331,32 @@ function CreatePresale() {
                 </MDTypography>
               </Checkbox>
               <Grid container spacing={1}>
-                <Grid item xs={12} xl={6} md={6} mt={3} style={{ justifyContent: "center" }}>
+                <Grid item xs={12} xl={6} md={6} mt={1} style={{ justifyContent: "center" }}>
                   <DatePicker
                     showTime
                     placeholder="Start Date"
                     id="startDate"
                     onChange={onChangeStartDate}
-                    onOk={onOk}
                     style={{ width: "100%", padding: "10px", borderRadius: "7px" }}
                   />
                 </Grid>
-                <Grid item xs={12} xl={6} md={6} mt={3} style={{ justifyContent: "center" }}>
+                <Grid item xs={12} xl={6} md={6} mt={1} style={{ justifyContent: "center" }}>
                   <DatePicker
                     showTime
                     placeholder="End Date"
                     onChange={onChangeEndDate}
-                    onOk={onOk}
                     style={{ width: "100%", padding: "10px", borderRadius: "7px" }}
                     disabled={dateState}
                   />
                 </Grid>
-                {!dateValidation && (
+                {dateValidation && (
                   <MDTypography variant="h6" textAlign="left" color="error">
-                    Please enter the correct date (Startdate, EndDate)
+                    The end date must be greater than the start time!
+                  </MDTypography>
+                )}
+                {startDateValidation && (
+                  <MDTypography variant="h6" textAlign="left" color="error">
+                    The start date must be greater than the current time!
                   </MDTypography>
                 )}
               </Grid>
@@ -298,12 +366,11 @@ function CreatePresale() {
               xs={12}
               xl={3}
               md={3}
-              mt={3}
-              mx={3}
+              m={3}
               style={{ width: "90%", justifyContent: "center" }}
             >
-              <MDTypography variant="h2" textAlign="center" style={{ width: "100%" }}>
-                Cost : 0.1BNB
+              <MDTypography variant="h4" textAlign="center" style={{ width: "100%" }}>
+                Cost : 0.01BNB
               </MDTypography>
 
               <MDButton
@@ -336,7 +403,7 @@ function CreatePresale() {
           <>
             {loading ? (
               <>
-                <MDButton color="info" disabled="true">
+                <MDButton color="info" disabled>
                   <Spin style={{ width: "60px" }} />
                 </MDButton>
                 <MDButton onClick={handleCancel}>Cancel</MDButton>
@@ -355,6 +422,18 @@ function CreatePresale() {
       >
         <MDTypography variant="h3" color="dark" textAlign="left" style={{ width: "100%" }} pb={2}>
           Create LaunchPad
+        </MDTypography>
+        <MDTypography
+          variant="h7"
+          color="info"
+          textAlign="left"
+          fontWeight="bold"
+          style={{ width: "100%", display: "flex" }}
+        >
+          PrivateSale Title :
+          <MDTypography variant="h7" color="dark" textAlign="left" px={3} fontWeight="regular">
+            {privateTitle}
+          </MDTypography>
         </MDTypography>
         <MDTypography
           variant="h7"
@@ -387,7 +466,7 @@ function CreatePresale() {
           style={{ width: "100%", display: "flex" }}
           fontWeight="bold"
         >
-          Min.Contribution (BNB) :
+          Min.Contribution ({tokenType}) :
           <MDTypography variant="h7" color="dark" textAlign="left" px={3} fontWeight="regular">
             {minContributionAmount}
           </MDTypography>
@@ -399,9 +478,9 @@ function CreatePresale() {
           textAlign="left"
           style={{ width: "100%", display: "flex" }}
         >
-          Max.Contribution (BNB) :
+          Max.Contribution ({tokenType}) :
           <MDTypography variant="h7" color="dark" textAlign="left" px={3} fontWeight="regular">
-            {maxContributionAmount}
+            {maxContributionAmount === 0 ? "No Limit" : maxContributionAmount}
           </MDTypography>
         </MDTypography>
         <MDTypography
@@ -430,26 +509,8 @@ function CreatePresale() {
           </MDTypography>
         </MDTypography>
       </Modal>
-
-      <Modal
-        style={{ zIndex: "999999" }}
-        closable={false}
-        open={isSuccessModalOpen}
-        width={500}
-        footer={[<MDButton onClick={handleCancel}>Ok</MDButton>]}
-      >
-        <MDTypography
-          variant="h3"
-          color="success"
-          textAlign="center"
-          style={{ width: "100%" }}
-          pb={2}
-        >
-          Created Successful !
-        </MDTypography>
-      </Modal>
     </DashboardLayout>
   );
 }
 
-export default CreatePresale;
+export default CreatePrivateSale;

@@ -183,6 +183,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "_title",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "_tokenPrice",
 		"outputs": [
 			{
@@ -310,6 +323,11 @@
 				"internalType": "address",
 				"name": "owner_",
 				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "title_",
+				"type": "string"
 			},
 			{
 				"internalType": "uint256",

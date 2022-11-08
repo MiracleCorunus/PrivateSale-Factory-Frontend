@@ -4,6 +4,10 @@
 .ant-modal-content {
   border-radius: 10px !important;
 }
+.ant-select-selection.ant-select-selection--single {
+    border-radius: 0px 8px 8px 0px !important;
+    height: 53px !important;
+}
 
 @media (max-width: 600px) {
 .ant-modal-content {
@@ -11,9 +15,7 @@
 }
 }
 
-.ant-spin-dot-item {
-  background-color: rgb(255, 102, 0) !important;
-}
+
 .css-irbhzg-MuiDrawer-docked .MuiDrawer-paper {
   z-index: 0 !important;
 }
