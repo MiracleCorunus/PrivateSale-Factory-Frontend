@@ -387,7 +387,7 @@ function CreatePrivateSale() {
                   textAlign="center"
                   style={{ width: "100%" }}
                 >
-                  Create LaunchPad
+                  Create PrivateSale
                 </MDTypography>
               </MDButton>
             </Grid>

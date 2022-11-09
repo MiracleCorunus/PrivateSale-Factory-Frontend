@@ -345,6 +345,17 @@ function LaunchDashboard() {
               style={{ width: "100%", marginBottom: "8%" }}
               id="logoLink"
               label="Logo IMG Link"
+              placeholder="https://.."
+              type="text"
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+            <TextField
+              style={{ width: "100%", marginBottom: "8%" }}
+              placeholder="https://.."
+              id="videoLink"
+              label="Video Link"
               type="text"
               InputLabelProps={{
                 shrink: true,

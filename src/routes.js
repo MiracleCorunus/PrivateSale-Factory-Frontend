@@ -1,6 +1,6 @@
 import LaunchDashboard from "layouts/launchDashboard";
 import CreatePrivateSale from "layouts/createPrivateSale";
-import InvestDashboard from "layouts/investDashboard";
+// import InvestDashboard from "layouts/investDashboard";
 
 // @mui icons
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -24,14 +24,14 @@ const routes = [
     route: "/createPrivateSale",
     component: <CreatePrivateSale />,
   },
-  {
-    type: "collapse",
-    name: "Invest Dashboard",
-    key: "investDashboard",
-    icon: <LoyaltyIcon />,
-    route: "/investDashboard",
-    component: <InvestDashboard />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Invest Dashboard",
+  //   key: "investDashboard",
+  //   icon: <LoyaltyIcon />,
+  //   route: "/investDashboard",
+  //   component: <InvestDashboard />,
+  // },
 ];
 
 export default routes;

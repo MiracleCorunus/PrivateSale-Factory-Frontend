@@ -6,7 +6,6 @@
 /* eslint-disable react/jsx-no-useless-fragment */
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-
 import MDBox from "components/MDBox";
 import Grid from "@mui/material/Grid";
 
@@ -25,8 +24,9 @@ import {
   FacebookFilled,
   EllipsisOutlined,
   DribbbleCircleFilled,
+  PlayCircleFilled,
 } from "@ant-design/icons";
-import { Progress, Switch, Spin, message, Skeleton } from "antd";
+import { Progress, Switch, Spin, message, Skeleton, Modal } from "antd";
 // eslint-disable-next-line no-unused-vars
 import { useWeb3React } from "@web3-react/core";
 import config from "config/config";
@@ -49,7 +49,7 @@ function PreSaleView() {
 
   const [loading, setLoading] = useState(false);
   const [liveState, setLiveState] = useState();
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [getDataLoading, setGetDataLoading] = useState(true);
 
   const [presaleArray, setPresaleArray] = useState([]);
@@ -93,6 +93,8 @@ function PreSaleView() {
     // eslint-disable-next-line no-underscore-dangle
     const other_url = await standardFactoryContract._maxInvestAmount();
     // eslint-disable-next-line no-underscore-dangle
+    const token_description = await standardFactoryContract._description();
+    // eslint-disable-next-line no-underscore-dangle
     const is_Native = await standardFactoryContract._isNative();
 
     array.push({
@@ -115,6 +117,7 @@ function PreSaleView() {
       twitterUrl: twitter_url.toString(),
       facebookUrl: facebook_url.toString(),
       otherUrl: other_url.toString(),
+      description: token_description.toString(),
       isNative: is_Native,
     });
     setPresaleArray(array[0]);
@@ -205,6 +208,14 @@ function PreSaleView() {
     }
   };
 
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
   useEffect(async () => {
     account && getData();
   }, [account]);
@@ -244,75 +255,194 @@ function PreSaleView() {
               {getDataLoading ? (
                 <Skeleton.Avatar
                   active="true"
-                  style={{ width: "250px", height: "250px", borderRadius: "10%" }}
+                  style={{
+                    width: "250px",
+                    height: "250px",
+                    borderRadius: "10%",
+                    objectPosition: "center",
+                  }}
                 />
               ) : (
                 <img
                   alt="example"
                   src={presaleArray.logoUrl === "" ? noIMG : presaleArray.logoUrl}
-                  style={{ width: "70%", borderRadius: "10%", objectPosition: "cover" }}
+                  style={{
+                    width: "250px",
+                    height: "250px",
+                    borderRadius: "10%",
+                    objectFit: "cover",
+                  }}
                 />
               )}
             </Grid>
-            <Grid item xs={12} xl={8} md={8} mt={3}>
+            <Grid item xs={12} xl={4} md={4} mt={3}>
               <MDBox style={{ width: "100%" }} coloredShadow="light" borderRadius="10px" p={3}>
-                <MDTypography variant="h4" color="dark" textAlign="left">
-                  PrivateSale Title : {presaleArray.title}
-                </MDTypography>
-                <MDTypography variant="h4" color="dark" textAlign="left" py={3}>
-                  {contractAddress}
-                </MDTypography>
-                <MDTypography variant="h6" color="dark" textAlign="left" py={1}>
-                  1 {presaleArray.isNative ? "BNB" : "BUSD"} ={" "}
-                  {presaleArray && presaleArray.tokenPrice} Token(s)
-                </MDTypography>
-                <MDTypography variant="h6" color="success" textAlign="left" py={1}>
-                  <MDButton color="info" mt={3}>
-                    Verified
-                  </MDButton>{" "}
-                </MDTypography>
-                <MDBox style={{ width: "100%", display: "flex" }} borderRadius="10px" pt={1}>
-                  <a
-                    href={presaleArray.websiteUrl}
-                    style={{ marginRight: "1%" }}
-                    target="_blank"
-                    rel="noreferrer"
+                {getDataLoading ? (
+                  <>
+                    <Skeleton.Input
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "8px", marginBottom: "4px" }}
+                    />
+                    <Skeleton.Input
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "8px", marginBottom: "4px" }}
+                    />
+                    <Skeleton.Input
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "8px", marginBottom: "4px" }}
+                    />
+                    <Skeleton.Input
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "8px", marginBottom: "4px" }}
+                    />
+                    <Skeleton.Avatar
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "50%", marginBottom: "4px" }}
+                    />{" "}
+                    <Skeleton.Avatar
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "50%", marginBottom: "4px" }}
+                    />{" "}
+                    <Skeleton.Avatar
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "50%", marginBottom: "4px" }}
+                    />{" "}
+                    <Skeleton.Avatar
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "50%", marginBottom: "4px" }}
+                    />{" "}
+                    <Skeleton.Avatar
+                      active="true"
+                      block="true"
+                      style={{ borderRadius: "50%", marginBottom: "4px" }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <MDTypography variant="h6" color="info" textAlign="left">
+                      PrivateSale Title :{" "}
+                      <span style={{ fontSize: "14px", color: "#344767" }}>
+                        {presaleArray.title}
+                      </span>
+                    </MDTypography>
+                    <MDTypography variant="h6" color="info" textAlign="left">
+                      Description :{" "}
+                      {presaleArray.description ? (
+                        <span style={{ fontSize: "14px", color: "#344767" }}>
+                          {presaleArray.description && presaleArray.description.slice(0, 40)}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "14px", color: "#344767" }}>No description</span>
+                      )}
+                      {presaleArray.description && (
+                        <MDButton onClick={showModal}> ... See More</MDButton>
+                      )}
+                    </MDTypography>
+                    <MDTypography variant="h6" color="info" textAlign="left">
+                      PrivateSale Addr :{" "}
+                      <span style={{ fontSize: "14px", color: "#344767" }}>
+                        {contractAddress && contractAddress.slice(0, 10)} ...{" "}
+                        {contractAddress.slice(-5)}
+                      </span>
+                    </MDTypography>
+                    <MDTypography variant="h6" color="info" textAlign="left">
+                      1 {presaleArray.isNative ? "BNB" : "BUSD"} ={" "}
+                      {presaleArray && presaleArray.tokenPrice} Token(s)
+                    </MDTypography>
+                    <MDTypography variant="h6" color="success" textAlign="left" py={1}>
+                      <MDButton color="info" mt={3}>
+                        Verified
+                      </MDButton>{" "}
+                    </MDTypography>
+                    <MDBox style={{ width: "100%", display: "flex" }} borderRadius="10px" pt={1}>
+                      <a
+                        href={presaleArray.websiteUrl}
+                        style={{ marginRight: "1%" }}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {" "}
+                        <DribbbleCircleFilled style={{ fontSize: "25px" }} />
+                      </a>
+                      <a
+                        href={
+                          presaleArray.twitterUrl === ""
+                            ? `https://twitter.com`
+                            : presaleArray.twitterUrl
+                        }
+                        style={{ marginRight: "1%" }}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {" "}
+                        <TwitterCircleFilled style={{ fontSize: "25px" }} />
+                      </a>
+                      <a
+                        href={presaleArray.facebookUrl}
+                        style={{ marginRight: "1%" }}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {" "}
+                        <FacebookFilled style={{ fontSize: "25px" }} />{" "}
+                      </a>
+                      <a
+                        href={presaleArray.otherUrl}
+                        style={{ marginRight: "1%" }}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {" "}
+                        <PlayCircleFilled style={{ fontSize: "25px" }} />{" "}
+                      </a>
+                      <a
+                        href={presaleArray.otherUrl}
+                        style={{ marginRight: "1%" }}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {" "}
+                        <EllipsisOutlined style={{ fontSize: "25px" }} />{" "}
+                      </a>
+                    </MDBox>
+                  </>
+                )}
+              </MDBox>
+            </Grid>
+            <Grid item xs={12} xl={4} md={4} mt={3}>
+              <MDBox style={{ width: "100%" }} coloredShadow="light" borderRadius="10px" p={3}>
+                <TextField
+                  style={{ width: "100%", marginBottom: "3%" }}
+                  id="investAmount"
+                  label="Invest Amount"
+                  type="number"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+                <MDButton
+                  color="info"
+                  style={{ width: "100%" }}
+                  onClick={() => investToken()}
+                  disabled={!liveState}
+                >
+                  <MDTypography
+                    variant="h6"
+                    color="white"
+                    textAlign="center"
+                    style={{ width: "100%" }}
                   >
-                    {" "}
-                    <DribbbleCircleFilled style={{ fontSize: "25px" }} />
-                  </a>
-                  <a
-                    href={
-                      presaleArray.twitterUrl === ""
-                        ? `https://twitter.com`
-                        : presaleArray.twitterUrl
-                    }
-                    style={{ marginRight: "1%" }}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {" "}
-                    <TwitterCircleFilled style={{ fontSize: "25px" }} />
-                  </a>
-                  <a
-                    href={presaleArray.facebookUrl}
-                    style={{ marginRight: "1%" }}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {" "}
-                    <FacebookFilled style={{ fontSize: "25px" }} />{" "}
-                  </a>
-                  <a
-                    href={presaleArray.otherUrl}
-                    style={{ marginRight: "1%" }}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {" "}
-                    <EllipsisOutlined style={{ fontSize: "25px" }} />{" "}
-                  </a>
-                </MDBox>
+                    {!loading ? "Invest" : <Spin />}
+                  </MDTypography>
+                </MDButton>
               </MDBox>
             </Grid>
           </Grid>
@@ -392,7 +522,11 @@ function PreSaleView() {
                   Make sure that you use Binance Smart Chain (BSC) Testnet
                 </MDTypography>
                 {getDataLoading ? (
-                  <Skeleton.Input active="true" block="true" />
+                  <Skeleton.Input
+                    active="true"
+                    block="true"
+                    style={{ borderRadius: "8px", marginBottom: "4px" }}
+                  />
                 ) : (
                   <>
                     <Progress
@@ -422,8 +556,15 @@ function PreSaleView() {
                     >
                       {getDataLoading ? (
                         <>
-                          <Skeleton.Input active="true" block="true" />
-                          <Skeleton.Input active="true" />
+                          <Skeleton.Input
+                            active="true"
+                            block="true"
+                            style={{ borderRadius: "8px", marginBottom: "4px" }}
+                          />
+                          <Skeleton.Input
+                            active="true"
+                            style={{ borderRadius: "8px", marginBottom: "4px" }}
+                          />
                         </>
                       ) : (
                         <>
@@ -458,8 +599,15 @@ function PreSaleView() {
                     >
                       {getDataLoading ? (
                         <>
-                          <Skeleton.Input active="true" block="true" />
-                          <Skeleton.Input active="true" />
+                          <Skeleton.Input
+                            active="true"
+                            block="true"
+                            style={{ borderRadius: "8px", marginBottom: "4px" }}
+                          />
+                          <Skeleton.Input
+                            active="true"
+                            style={{ borderRadius: "8px", marginBottom: "4px" }}
+                          />
                         </>
                       ) : (
                         <>
@@ -532,7 +680,11 @@ function PreSaleView() {
                   My Tokens
                 </MDTypography>
                 {getDataLoading ? (
-                  <Skeleton.Input active="true" block="true" />
+                  <Skeleton.Input
+                    active="true"
+                    block="true"
+                    style={{ borderRadius: "8px", marginBottom: "4px" }}
+                  />
                 ) : (
                   <MDTypography variant="h6" color="light" textAlign="left">
                     Invested:{" "}
@@ -550,6 +702,18 @@ function PreSaleView() {
           </Grid>
         </Card>
       </MDBox>
+      <Modal
+        closable={false}
+        open={isModalOpen}
+        width={500}
+        footer={[<MDButton onClick={handleCancel}>Cancel</MDButton>]}
+        className="launchdasboardModal"
+      >
+        <MDTypography variant="h4" fontWeight="bold">
+          Description
+        </MDTypography>
+        <span style={{ fontSize: "14px" }}>{presaleArray.description}</span>
+      </Modal>
     </DashboardLayout>
   );
 }
