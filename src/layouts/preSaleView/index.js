@@ -13,6 +13,7 @@ import Grid from "@mui/material/Grid";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 
+import { Progress, Switch, Spin, message, Skeleton, Modal } from "antd";
 import Card from "@mui/material/Card";
 import MDTypography from "components/MDTypography";
 import TextField from "@mui/material/TextField";
@@ -26,12 +27,17 @@ import {
   DribbbleCircleFilled,
   PlayCircleFilled,
 } from "@ant-design/icons";
-import { Progress, Switch, Spin, message, Skeleton, Modal } from "antd";
+
 // eslint-disable-next-line no-unused-vars
 import { useWeb3React } from "@web3-react/core";
 import config from "config/config";
 import STANDARDPRESALEABI from "../../assets/abi/STANDARDPRESALEABI.json";
 import BUSDABI from "../../assets/abi/BUSDABI.json";
+
+import InvestListTable from "./investListTable";
+
+// eslint-disable-next-line import/no-named-as-default
+import FinalizeclaimButton from "./finalizeclaimButton";
 
 import noIMG from "../../assets/images/noIMG.png";
 
@@ -48,12 +54,15 @@ function PreSaleView() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [getInvestLoadingState, setGetInvestLoadingState] = useState(false);
+
   const [liveState, setLiveState] = useState();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInvestListModalOpen, setIsInvestListModalOpen] = useState(false);
   const [getDataLoading, setGetDataLoading] = useState(true);
 
   const [presaleArray, setPresaleArray] = useState([]);
-
+  const [investerArray, setInvesterArray] = useState([]);
   const Provider = new ethers.providers.Web3Provider(window.ethereum);
   const Signer = Provider.getSigner();
   const standardFactoryContract = new ethers.Contract(contractAddress, STANDARDPRESALEABI, Signer);
@@ -96,6 +105,14 @@ function PreSaleView() {
     const token_description = await standardFactoryContract._description();
     // eslint-disable-next-line no-underscore-dangle
     const is_Native = await standardFactoryContract._isNative();
+    // eslint-disable-next-line no-underscore-dangle
+    const finised_privateSale = await standardFactoryContract._isFinished();
+    // eslint-disable-next-line no-underscore-dangle
+    const isStarted_claim = await standardFactoryContract._isStartClaim();
+    // eslint-disable-next-line no-underscore-dangle
+    const is_Claimed = await standardFactoryContract._isClaimed(account);
+    const invested_Amount = await standardFactoryContract.getInvestedAmountPerUser(account);
+    const current_Time = new Date().getTime();
 
     array.push({
       // eslint-disable-next-line camelcase
@@ -105,8 +122,8 @@ function PreSaleView() {
       endTime: endDateEvent,
       owner: token_owner.toString(),
       periods: Number(period),
-      startTimeStamp: Number(start_Time),
-      endTimeStamp: Number(start_Time) + Number(period),
+      startTimeStamp: Number(start_Time) + 100,
+      endTimeStamp: Number(start_Time) + Number(period) + 100,
       tokenPrice: Number(token_price) / 1000000,
       totalAmount: Number(total_amount) / 1000000,
       remainAmount: Number(remain_amount) / 1000000,
@@ -119,7 +136,13 @@ function PreSaleView() {
       otherUrl: other_url.toString(),
       description: token_description.toString(),
       isNative: is_Native,
+      isFinished: finised_privateSale,
+      isStartClaim: isStarted_claim,
+      isclaimed: is_Claimed,
+      investAmount: Number(invested_Amount),
+      currentTime: current_Time,
     });
+    console.log(array[0].startTimeStamp, array[0].endTimeStamp);
     setPresaleArray(array[0]);
     setGetDataLoading(false);
   };
@@ -131,10 +154,10 @@ function PreSaleView() {
         let countDown;
         if (currentTime < Number(array[0].startTimeStamp * 1000)) {
           setLiveState(false);
-          countDown = Number(array[0].startTimeStamp * 1000 + 10000);
+          countDown = Number(array[0].startTimeStamp * 1000);
         } else {
           // eslint-disable-next-line no-unused-vars
-          countDown = Number(array[0].endTimeStamp * 1000 + 10000);
+          countDown = Number(array[0].endTimeStamp * 1000);
           setLiveState(true);
         }
 
@@ -171,9 +194,12 @@ function PreSaleView() {
     }
   };
 
-  const investToken = async () => {
+  const investToken = async (target) => {
     setLoading(true);
-    const tokenAmountValue = document.getElementById("investAmount").value;
+    let tokenAmountValue;
+    target === 1
+      ? (tokenAmountValue = document.getElementById("investAmount1").value)
+      : (tokenAmountValue = document.getElementById("investAmount2").value);
     if (tokenAmountValue > presaleArray.totalAmount) {
       message.error("Please enter the correct value (value < Max.Contribution)");
     } else {
@@ -208,12 +234,48 @@ function PreSaleView() {
     }
   };
 
+  const ClaimToken = async () => {
+    setLoading(true);
+    await standardFactoryContract.claimToken().then((tx) => {
+      tx.wait().then(() => {
+        message.success("Claimed successful.");
+        window.location.reload();
+        setLoading(false);
+      });
+    });
+  };
+
   const showModal = () => {
     setIsModalOpen(true);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+  };
+
+  const showInvestListModal = async () => {
+    setGetInvestLoadingState(true);
+    setIsInvestListModalOpen(true);
+    const investList = [];
+    let investersList = [];
+    investersList = await standardFactoryContract.getInvestorList();
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < investersList.length; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      const investAmount = await standardFactoryContract.getInvestedAmountPerUser(investersList[i]);
+
+      investList.push({
+        invester: investersList[i],
+        tokenAmount: Number(investAmount) / 1000000,
+        priceAmount: Number(investAmount) / (presaleArray.tokenPrice * 1000000),
+      });
+    }
+    setInvesterArray(investList);
+    setGetInvestLoadingState(false);
+  };
+
+  const investListModalCancel = () => {
+    setIsInvestListModalOpen(false);
   };
 
   useEffect(async () => {
@@ -337,7 +399,7 @@ function PreSaleView() {
                       Description :{" "}
                       {presaleArray.description ? (
                         <span style={{ fontSize: "14px", color: "#344767" }}>
-                          {presaleArray.description && presaleArray.description.slice(0, 40)}
+                          {presaleArray.description && presaleArray.description.slice(0, 70)}
                         </span>
                       ) : (
                         <span style={{ fontSize: "14px", color: "#344767" }}>No description</span>
@@ -419,30 +481,61 @@ function PreSaleView() {
             </Grid>
             <Grid item xs={12} xl={4} md={4} mt={3}>
               <MDBox style={{ width: "100%" }} coloredShadow="light" borderRadius="10px" p={3}>
-                <TextField
-                  style={{ width: "100%", marginBottom: "3%" }}
-                  id="investAmount"
-                  label="Invest Amount"
-                  type="number"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-                <MDButton
-                  color="info"
-                  style={{ width: "100%" }}
-                  onClick={() => investToken()}
-                  disabled={!liveState}
-                >
-                  <MDTypography
-                    variant="h6"
-                    color="white"
-                    textAlign="center"
-                    style={{ width: "100%" }}
-                  >
-                    {!loading ? "Invest" : <Spin />}
-                  </MDTypography>
-                </MDButton>
+                {!presaleArray.isFinished ? (
+                  <>
+                    <TextField
+                      style={{ width: "100%", marginBottom: "3%" }}
+                      id="investAmount1"
+                      label=" Amount"
+                      type="number"
+                    />
+                    <MDButton
+                      color="info"
+                      style={{ width: "100%" }}
+                      onClick={() => investToken(1)}
+                      disabled={!liveState}
+                    >
+                      <MDTypography
+                        variant="h6"
+                        color="white"
+                        textAlign="center"
+                        style={{ width: "100%" }}
+                      >
+                        {!loading ? "Invest" : <Spin />}
+                      </MDTypography>
+                    </MDButton>
+                  </>
+                ) : (
+                  <>
+                    {" "}
+                    {!presaleArray.isclaimed && presaleArray.investAmount !== 0 ? (
+                      <MDButton
+                        color="info"
+                        style={{ width: "100%" }}
+                        onClick={() => ClaimToken()}
+                        disabled={!presaleArray.isStartClaim}
+                      >
+                        <MDTypography
+                          variant="h6"
+                          color="white"
+                          textAlign="center"
+                          style={{ width: "100%" }}
+                        >
+                          {!loading ? "Claim" : <Spin />}
+                        </MDTypography>
+                      </MDButton>
+                    ) : (
+                      <MDTypography
+                        variant="h6"
+                        color="info"
+                        textAlign="center"
+                        style={{ width: "100%" }}
+                      >
+                        This PrivateSale was finised
+                      </MDTypography>
+                    )}
+                  </>
+                )}
               </MDBox>
             </Grid>
           </Grid>
@@ -637,34 +730,65 @@ function PreSaleView() {
                   </Grid>
                 </Grid>
                 <Grid container spacing={1} py={1} px={1}>
-                  <Grid item xs={12} xl={6} md={6} mt={3} style={{ justifyContent: "center" }}>
-                    <TextField
-                      style={{ width: "100%" }}
-                      id="investAmount"
-                      label="Invest Amount"
-                      type="number"
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} xl={6} md={6} mt={3} style={{ justifyContent: "center" }}>
-                    <MDButton
-                      color="info"
-                      style={{ width: "100%" }}
-                      onClick={() => investToken()}
-                      disabled={!liveState}
-                    >
-                      <MDTypography
-                        variant="h6"
-                        color="white"
-                        textAlign="center"
-                        style={{ width: "100%" }}
+                  {presaleArray && !presaleArray.isFinished ? (
+                    <>
+                      <Grid item xs={12} xl={6} md={6} mt={3} style={{ justifyContent: "center" }}>
+                        <TextField
+                          style={{ width: "100%" }}
+                          id="investAmount2"
+                          label="Invest Amount"
+                          type="number"
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                        />
+                      </Grid>
+                      <Grid
+                        item
+                        xs={12}
+                        xl={6}
+                        md={6}
+                        mt={3}
+                        style={{ justifyContent: "center", width: "100%", display: "flex" }}
                       >
-                        {!loading ? "Invest" : <Spin />}
-                      </MDTypography>
-                    </MDButton>
-                  </Grid>
+                        <MDButton
+                          color="info"
+                          style={{ width: "100%" }}
+                          onClick={() => investToken(2)}
+                          disabled={!liveState}
+                        >
+                          <MDTypography
+                            variant="h6"
+                            color="white"
+                            textAlign="center"
+                            style={{ width: "100%" }}
+                          >
+                            {!loading ? "Invest" : <Spin />}
+                          </MDTypography>
+                        </MDButton>
+                      </Grid>
+                    </>
+                  ) : (
+                    <>
+                      {!presaleArray.isclaimed && presaleArray.investAmount !== 0 && (
+                        <MDButton
+                          color="info"
+                          style={{ width: "100%" }}
+                          onClick={() => ClaimToken()}
+                          disabled={!presaleArray.isStartClaim}
+                        >
+                          <MDTypography
+                            variant="h6"
+                            color="white"
+                            textAlign="center"
+                            style={{ width: "100%" }}
+                          >
+                            {!loading ? "Claim" : <Spin />}
+                          </MDTypography>
+                        </MDButton>
+                      )}
+                    </>
+                  )}
                 </Grid>
               </MDBox>
             </Grid>
@@ -677,7 +801,7 @@ function PreSaleView() {
                 bgColor="info"
               >
                 <MDTypography variant="h4" color="light" textAlign="center">
-                  My Tokens
+                  Invested Token Amount
                 </MDTypography>
                 {getDataLoading ? (
                   <Skeleton.Input
@@ -698,6 +822,35 @@ function PreSaleView() {
                   </MDTypography>
                 )}
               </MDBox>
+              {account && account === presaleArray.owner ? (
+                <MDBox
+                  style={{ width: "100%", display: "flex" }}
+                  coloredShadow="light"
+                  borderRadius="10px"
+                  p={3}
+                  my={2}
+                >
+                  <MDButton
+                    color="info"
+                    style={{ width: "100%", marginRight: "2%" }}
+                    onClick={showInvestListModal}
+                  >
+                    View Invest Lists
+                  </MDButton>{" "}
+                  <FinalizeclaimButton
+                    contractAddress={contractAddress}
+                    isFinishedPrivateSale={presaleArray.isFinished}
+                    tokenAmount={presaleArray.totalAmount}
+                    isStartClaim={presaleArray.isStartClaim}
+                    startTime={presaleArray.startTimeStamp}
+                    endTime={presaleArray.endTimeStamp}
+                    currentTime={presaleArray.currentTime}
+                    period={presaleArray.periods}
+                  />
+                </MDBox>
+              ) : (
+                <></>
+              )}
             </Grid>
           </Grid>
         </Card>
@@ -713,6 +866,19 @@ function PreSaleView() {
           Description
         </MDTypography>
         <span style={{ fontSize: "14px" }}>{presaleArray.description}</span>
+      </Modal>
+      <Modal
+        key="2"
+        closable={false}
+        open={isInvestListModalOpen}
+        width={500}
+        footer={[<MDButton onClick={investListModalCancel}>Cancel</MDButton>]}
+        className="launchdasboardModal"
+      >
+        <MDTypography variant="h4" fontWeight="bold">
+          Invest List
+        </MDTypography>
+        <InvestListTable data={investerArray} getInvestLoadingState={getInvestLoadingState} />
       </Modal>
     </DashboardLayout>
   );

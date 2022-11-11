@@ -23,7 +23,7 @@ import { navbar, navbarContainer, navbarRow } from "examples/Navbars/DashboardNa
 
 // Material Dashboard 2 React context
 import { useMaterialUIController, setTransparentNavbar, setMiniSidenav } from "context";
-
+import { switchNetwork } from "hooks/switch-network";
 import connectedIcon from "../../../assets/images/connectedIcon.png";
 
 function DashboardNavbar({ absolute, light, isMini }) {
@@ -78,7 +78,8 @@ function DashboardNavbar({ absolute, light, isMini }) {
 
   async function connect() {
     if (chainId !== 19 || chainId === undefined) {
-      // eslint-disable-next-line no-console
+      switchNetwork();
+
       console.log("chainId", chainId);
     }
     try {

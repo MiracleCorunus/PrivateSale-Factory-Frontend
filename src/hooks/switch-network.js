@@ -1,41 +1,49 @@
-const switchSongbirdRequest = () =>
-  window.ethereum.request({
-    method: 'wallet_switchEthereumChain',
-    params: [{ chainId: '0x13' }],
-  })
+// eslint-disable-next-line import/prefer-default-export
+export const switchNetwork = async () => {
+  const provider = window.ethereum;
+  const binanceTestChainId = "0x61";
 
-const addSongbirdRequest = () =>
-  window.ethereum.request({
-    method: 'wallet_addEthereumChain',
-    params: [
-      {
-        chainId: '0x13',
-        chainName: 'SongBird',
-        rpcUrls: ['https://sgb.ftso.com.au/ext/bc/C/rpc'],
-        blockExplorerUrls: ['https://songbird-explorer.flare.network'],
-        nativeCurrency: {
-          name: 'SGB',
-          symbol: 'SGB',
-          decimals: 18,
-        },
-      },
-    ],
-  })
+  if (!provider) {
+    console.log("Metamask is not installed, please install!");
+  } else {
+    const chainId = await provider.request({ method: "eth_chainId" });
 
-export const switchSongbirdNetwork = async () => {
-  if (window.ethereum) {
-    try {
-      await switchSongbirdRequest()
-    } catch (error) {
-      if (error.code === 4902) {
-        try {
-          await addSongbirdRequest()
-          await switchSongbirdRequest()
-        } catch (addError) {
-          console.log(error)
+    if (chainId === binanceTestChainId) {
+      console.log("Bravo!, you are on the correct network");
+    } else {
+      console.log("oulalal, switch to the correct network");
+      try {
+        await provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: binanceTestChainId }],
+        });
+        console.log("You have succefully switched to Binance Test network");
+      } catch (switchError) {
+        // This error code indicates that the chain has not been added to MetaMask.
+        if (switchError.code === 4902) {
+          console.log("This network is not available in your metamask, please add it");
+          try {
+            await provider.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0x61",
+                  chainName: "Smart Chain - Testnet",
+                  rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545"],
+                  blockExplorerUrls: ["https://testnet.bscscan.com"],
+                  nativeCurrency: {
+                    symbol: "BNB", // 2-6 characters long
+                    decimals: 18,
+                  },
+                },
+              ],
+            });
+          } catch (addError) {
+            // handle "add" error
+            console.log(addError);
+          }
         }
       }
-      console.log(error)
     }
   }
-}
+};

@@ -421,7 +421,7 @@ function CreatePrivateSale() {
         className="createPresaleModal"
       >
         <MDTypography variant="h3" color="dark" textAlign="left" style={{ width: "100%" }} pb={2}>
-          Create LaunchPad
+          Create PrivateSale
         </MDTypography>
         <MDTypography
           variant="h7"
@@ -442,7 +442,7 @@ function CreatePrivateSale() {
           fontWeight="bold"
           style={{ width: "100%", display: "flex" }}
         >
-          Token Amount :
+          Token Price :
           <MDTypography variant="h7" color="dark" textAlign="left" px={3} fontWeight="regular">
             {tokenPrice}
           </MDTypography>
@@ -454,7 +454,7 @@ function CreatePrivateSale() {
           fontWeight="bold"
           style={{ width: "100%", display: "flex" }}
         >
-          Total Supply :
+          Total Token Amount :
           <MDTypography variant="h7" color="dark" textAlign="left" px={3} fontWeight="regular">
             {totalAmount}
           </MDTypography>
